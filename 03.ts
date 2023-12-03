@@ -291,13 +291,35 @@ console.log(symbolLocations);
 log(numbersFound);
 
 const partNumbers: number[] = [];
-numbersFound.filter(n => {
+const partNumbersAdjecentToAStar = new Map<string, NumberFound[]>();
+const getLookupKey = (row: number, col: number) => `${row}-${col}`;
+
+numbersFound.forEach(n => {
     const neighbours = findNeighbours(n);
-    const hasSymbolAsNeighbour = neighbours.some(([neighbourRow, neighbourCol]) => (symbolLocations?.[neighbourRow]?.[neighbourCol]) ?? false);
+    const hasSymbolAsNeighbour = neighbours.some(([neighbourRow, neighbourCol]) => (symbolLocations[neighbourRow]?.[neighbourCol]) ?? false);
     if (hasSymbolAsNeighbour) {
         partNumbers.push(n.value);
+        
+        // Schematic has no two part numbers being adject to multiple same stars, so we can simplify our code
+        const startNeighbour = neighbours.filter(([neighbourRow, neighbourCol]) => symbolLocations[neighbourRow]?.[neighbourCol])?.[0];
+        if (startNeighbour) {
+            const lookupKey = getLookupKey(startNeighbour[0], startNeighbour[1]);
+            if (partNumbersAdjecentToAStar.has(lookupKey)) {
+                partNumbersAdjecentToAStar.set(lookupKey, [ ...partNumbersAdjecentToAStar.get(lookupKey)!, n]);
+            } else {
+                partNumbersAdjecentToAStar.set(lookupKey, [n]);
+            }
+        }
     }
 });
 log(partNumbers);
+debugger;
+log([...partNumbersAdjecentToAStar.entries()]);
 
 log(partNumbers.reduce((acc, curr) => acc + curr, 0));
+log([...partNumbersAdjecentToAStar.entries()]
+    .map(([_key, n]) => n)
+    .filter(n => n.length > 1)
+    .map((n) => n.reduce((acc, curr) => acc * curr.value, 1))
+    .flat()
+    .reduce((acc, curr) => acc + curr, 0));
